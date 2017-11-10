@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <script type="text/javascript" src="fileUploader_oldstyle.js" ></script>
+    <script type="text/javascript" src="eventUntil.js" ></script>
+    <title>Document</title>
+</head>
+<body>
+    <input type="file" />
+</body>
+<script>
+    var FileUploader = new fileUploader(),
+        input = document.querySelector("input[type='file']");
+    
+    eventUntil.addHandler(input, "change", function(){
+        var file = this.files[0];
+        FileUploader.setOptions({
+            chuckSize: 1024*1024
+        });
+        FileUploader.upload("upload.php", file, function(){
+            console.log("file uploaded");
+        });
+    });
+</script>
+</html>
