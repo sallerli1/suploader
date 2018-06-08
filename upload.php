@@ -1,11 +1,5 @@
 <?php
 
-
-$w =1;
-$w =1;
-$w =1;
-$w =1;
-
 switch ($_POST['type']) {
     case 'Info':
         if (!file_exists("upload/info/" . $_POST['fileName'] . ".json")) {
@@ -32,8 +26,7 @@ switch ($_POST['type']) {
             );
 
             file_put_contents("upload/info/" . $_POST['fileName'] . ".json", json_encode($info));
-        }
-        else {
+        } else {
 
             $success = true;
             $state = 1;
