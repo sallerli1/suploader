@@ -1,6 +1,6 @@
-import { post, isType } from './util'
+import { post, isType } from "./util";
 
-export async function loadInfo (url, file, chuckSize) {
+export async function sendInfo(url, file, chuckSize) {
     try {
         if (!isType(File, file)) {
             throw new TypeError("file is not an File object");
@@ -12,6 +12,23 @@ export async function loadInfo (url, file, chuckSize) {
             chuck_size: chuckSize
         });
     } catch (err) {
-        throw err
+        throw err;
     }
+}
+
+export function sendFirst(uxhr, chuckSize) {
+    let xhr = uxhr.xhr,
+        file = uxhr.file,
+        url = uxhr.uploader.uploadRoute;
+
+    let form = new FormData();
+
+    form.append("number", -1);
+    form.append("first", true);
+    form.append("file_name", file.name);
+    form.append("file_size", file.size);
+    form.append("chuck_size", chuckSize);
+
+    xhr.open("POST", url, true);
+    xhr.send(form);
 }
