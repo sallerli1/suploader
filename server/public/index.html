@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <script type="text/javascript" src="fileUploader_oldstyle.js" ></script>
+    <script type="text/javascript" src="eventUtil.js" ></script>
+    <title>Document</title>
+</head>
+<body>
+    <input type="file" />
+</body>
+<script>
+    var FileUploader = new fileUploader(),
+        input = document.querySelector("input[type='file']");
+    
+    eventUntil.addHandler(input, "change", function(){
+        var file = this.files[0];
+        let xhr = new XMLHttpRequest()
+        let form = new FormData()
+
+        form.append('number', 1);
+        form.append('file', file);
+
+        xhr.open('POST', '/upload', true)
+        xhr.send(form)
+    });
+</script>
+</html>
