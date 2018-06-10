@@ -1,6 +1,6 @@
 
 
-var eventUntil = {
+export default {
 
     addHandler : function (element, type, handler) {
         if (element.addEventListener) {

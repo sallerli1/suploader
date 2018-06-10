@@ -23,6 +23,8 @@ export default class UploadXHR {
             this.xhr = new ActiveXObject("Microsoft.XMLHTTP");
         }
 
+        this.xhr.responseType = "json";
+
         if (!lazy) {
             this.start();
         }
@@ -38,10 +40,6 @@ export default class UploadXHR {
     }
 
     start() {
-        if (this.state !== READEY) {
-            return;
-        }
-
         this.state = STARTING;
         this.init()();
     }
@@ -51,11 +49,16 @@ function initUXHR(uxhr) {
     const uploader = uxhr.uploader;
     const file = uxhr.file;
     const xhr = uxhr.xhr;
-    const chuckSize = uploader.chuckSize;
+    const chuckSize = uploader.options.chuckSize;
+    const chuckCount = Math.ceil(file.size / chuckSize);
 
-    let p = 0,
+    let windowSize = (uploader.options.windowSize &&
+        uploader.options.windowSize <= Math.floor((file.size / chuckSize) / 2)) ?
+        uploader.options.windowSize : Math.floor((file.size / chuckSize) / 2)
+
+    let p = -1,
         left = -1,
-        right = uploader.options.windowSize - 1;
+        right = windowSize - 1;
 
     let failed = [];
 
@@ -64,6 +67,9 @@ function initUXHR(uxhr) {
 
     let em = new eventemiter();
     let upload = () => {
+        if (uxhr.state !== RUNNING) {
+            return;
+        }
 
         //send the unsuccessfully sent chucks
         if (failed.length) {
@@ -75,22 +81,25 @@ function initUXHR(uxhr) {
 
         //check if the file has been fully uploaded
         //if fully uploaded, free the stored info about this file
-        if (p * chuckSize >= file.size) {
+        if (p * chuckSize >= file.size && failed.length === 0) {
             uploader.callbackArr.get(file)();
             uploader.options.onsuccess();
             uploader.xhrArr.delete(file);
-            uploader.fileBuffer[index];
             uploader.callbackArr.delete(file);
 
             uploader.fileBuffer.filter(v => v !== file)
             if (!uploader.fileBuffer.length) {
                 uploader.options.onsuccess();
             }
+
+            return;
         }
-        if (p < right) {
+        if (p <= right) {
             sendBlob(xhr, url, file, p, chuckSize);
             return;
         }
+
+        uxhr.state = PENDING;
         p--;
     }
 
@@ -101,18 +110,22 @@ function initUXHR(uxhr) {
         uploader.options.oninfo(res);
 
         let pre = left;
-        left = info.ack;
+        left = res.ack;
 
         if (uxhr.state === STARTING) {
             uxhr.state = RUNNING;
         }
 
         (pre === left &&
+        pre !== -1 &&
         failed.indexOf(pre) < 0) &&
-        failed.push(pre);
+        failed.push(pre+1);
 
         right += (left - pre);
-        //p = Math.max(left+1, p);
+        right = right <= chuckCount -1 ? right : chuckCount -1;
+        console.log(`left: ${left}`,`right: ${right}`, failed)
+        p = Math.max(left, p);
+        console.log(p)
 
         //trigger upload
         em.emit('upload_start');
@@ -139,9 +152,10 @@ function initUXHR(uxhr) {
 
         //return if the present chuck hasn't
         //reatched the right border of the sending window
-        if (p < right) {
+        if (uxhr.state === RUNNING) {
             return;
         }
+        uxhr.state = RUNNING;
         upload();
     })
 

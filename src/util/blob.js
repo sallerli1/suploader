@@ -4,7 +4,8 @@ export function sendBlob(xhr, url, file, start, chuckSize) {
             start * chuckSize,
             (start + 1) * chuckSize);
 
-    form.append("number", start + 1);
+    form.append("number", start);
+    form.append("file_name", file.name);
     form.append("file", blob);
 
     xhr.open("POST", url, true);

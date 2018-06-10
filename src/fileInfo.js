@@ -16,10 +16,11 @@ export async function sendInfo(url, file, chuckSize) {
     }
 }
 
-export function sendFirst(uxhr, chuckSize) {
+export function sendFirst(uxhr) {
     let xhr = uxhr.xhr,
         file = uxhr.file,
-        url = uxhr.uploader.uploadRoute;
+        url = uxhr.uploader.options.uploadRoute,
+        chuckSize = uxhr.uploader.options.chuckSize;
 
     let form = new FormData();
 
