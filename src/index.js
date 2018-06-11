@@ -3,7 +3,7 @@ import eventUtil from "./eventUtil";
 
 let uploader = new Uploader({
     uploadRoute: "/upload",
-    chuckSize: 1024 * 1024 * 10
+    chuckSize: 1024 * 10
 });
 
 let file = null;

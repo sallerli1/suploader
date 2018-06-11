@@ -17,7 +17,9 @@ let storage = multer.diskStorage({
     //文件保存路径
     destination: async function(req, file, cb) {
         let params = req.body,
-            storage = path.resolve(`./server/uploads/files/${params.file_name}`);
+            storage = path.resolve(
+                `./server/uploads/files/${params.file_name}`
+            );
 
         if (!(await fse.exists(storage))) {
             await fse.mkdir(storage);
@@ -42,10 +44,14 @@ router.post("/upload", upload.single("file"), async (ctx, next) => {
         file = ctx.req.file,
         ack = -1;
 
-    let number = parseInt(params.number)
+    let number = parseInt(params.number);
 
-    if (!(await fse.exists(path.resolve(`./server/uploads/info/${params.file_name}.json`)))) {
-        console.log('create')
+    if (
+        !(await fse.exists(
+            path.resolve(`./server/uploads/info/${params.file_name}.json`)
+        ))
+    ) {
+        console.log("create");
         info = {
             last: -1,
             buffer: [],
@@ -55,7 +61,7 @@ router.post("/upload", upload.single("file"), async (ctx, next) => {
             chuckCount: 0
         };
     } else {
-        console.log('read')
+        console.log("read");
         info = await fse.readJSON(
             path.resolve(`./server/uploads/info/${params.file_name}.json`)
         );
@@ -66,13 +72,15 @@ router.post("/upload", upload.single("file"), async (ctx, next) => {
         info.fileSize = params.file_size;
         info.chuckSize = params.chuck_size;
         info.chuckCount = Math.ceil(info.fileSize / info.chuckSize);
-        console.log(info)
+        console.log(info);
     }
 
     if (number !== info.last + 1) {
         ack = info.last;
-        (number > info.last && info.buffer.indexOf(number) < 0 ) && info.buffer.push(number);
-        console.log(1, number, ack, info.last)
+        number > info.last &&
+            info.buffer.indexOf(number) < 0 &&
+            info.buffer.push(number);
+        console.log(1, number, ack, info.last);
     } else {
         ack = ++info.last;
         while (info.buffer.length) {
@@ -81,14 +89,39 @@ router.post("/upload", upload.single("file"), async (ctx, next) => {
                 info.buffer.shift();
             } else break;
         }
-        console.log(2, number, ack, info.last)
+        console.log(2, number, ack, info.last);
     }
 
-    fse.writeJSON(path.resolve(`./server/uploads/info/${params.file_name}.json`), info);
+    fse.writeJSON(
+        path.resolve(`./server/uploads/info/${params.file_name}.json`),
+        info
+    );
+
+    if (ack >= info.chuckCount-1) {
+        cancatFiles(params.file_name, info.chuckCount)
+    }
+
     ctx.body = {
         ack
     };
 });
+
+async function cancatFiles(filename, cnt) {
+    for (let i = 0; i < cnt; i++) {
+        await fse.appendFile(
+            path.resolve(
+                `./server/uploads/files/${filename}`,
+                `${filename}`
+            ),
+            await fse.readFile(
+                path.resolve(
+                    `./server/uploads/files/${filename}`,
+                    `${i}-${filename}`
+                )
+            )
+        );
+    }
+}
 
 app.use(router.routes()).use(router.allowedMethods());
 

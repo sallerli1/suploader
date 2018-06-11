@@ -132,6 +132,7 @@ function initUXHR(uxhr) {
     }
 
     xhr.upload.onload = async (event) => {
+        console.log('upload.onload')
         if (uxhr.state === RUNNING) {
             uploader.resolveProgress(file, event, p);
         }
@@ -139,6 +140,7 @@ function initUXHR(uxhr) {
     };
 
     xhr.onload = async (event) => {
+        console.log('onload')
         checkIntegrity(xhr.response);
     }
 
