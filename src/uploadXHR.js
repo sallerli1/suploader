@@ -123,16 +123,13 @@ function initUXHR(uxhr) {
 
         right += (left - pre);
         right = right <= chuckCount -1 ? right : chuckCount -1;
-        console.log(`left: ${left}`,`right: ${right}`, failed)
         p = Math.max(left, p);
-        console.log(p)
 
         //trigger upload
         em.emit('upload_start');
     }
 
     xhr.upload.onload = async (event) => {
-        console.log('upload.onload')
         if (uxhr.state === RUNNING) {
             uploader.resolveProgress(file, event, p);
         }
@@ -140,7 +137,6 @@ function initUXHR(uxhr) {
     };
 
     xhr.onload = async (event) => {
-        console.log('onload')
         checkIntegrity(xhr.response);
     }
 
