@@ -1,10 +1,27 @@
 import eventemiter from 'eventemitter3';
 import { sendBlob, blobSlice, isType } from './util';
 import UploadXHR from './uploadXHR';
+import {
+    PENDING,
+    ERROR,
+    RUNNING,
+    FINISHED
+} from './util/constants';
 
 export default class FileUploader {
 
-    constructor(options) {
+    /**
+     * constructor of Suploader
+     * @param {object} options 
+     * @param {string} [options.uploadRoute] url of the upload target
+     * @param {number} [options.chuckSize] size per chuck
+     * @param {number} [options.windowSize] size of the sending window
+     * @param {function} [options.onsuccess]
+     * @param {function} [options.onprogress]
+     * @param {function} [options.onerror]
+     * @param {function} [options.oninfo]
+     */
+    constructor (options) {
         this.fileBuffer = [];
         this.totalSize = 0;
         this.loadedMap = new Map();
@@ -28,7 +45,7 @@ export default class FileUploader {
                 options.onerror :
                 function(){},
             oninfo: isType(Function, options.oninfo) ?
-                options.onprogress :
+                options.oninfo :
                 function(){},
         };
     }
@@ -39,8 +56,8 @@ export default class FileUploader {
      * @param {Event} event 
      * @param {Number} step 
      */
-    resolveProgress(file, event, step) {
-        var loaded = step * this.options['chuckSize'] + event.loaded;
+    resolveProgress (file, event, step) {
+        let loaded = step * this.options['chuckSize'] + event.loaded;
 
         this.loadedMap.set(file, loaded);
         this.loaded = 0;
@@ -50,8 +67,9 @@ export default class FileUploader {
 
         this.allProgress.set(file, ((loaded) * 100 / file.size).toFixed(2));
         this.progress = ((this.loaded * 100) / this.totalSize).toFixed(2);
+        this.progress =  
         
-        this.options.onprogress(this.allProgress.get(file), this.progress);
+        this.options.onprogress(file, this.allProgress.get(file), this.progress);
     }
 
     /**
@@ -59,7 +77,7 @@ export default class FileUploader {
      * @param {File} file 
      * @param {Function} callback 
      */
-    add(file, callback) {
+    add (file, callback) {
         this.fileBuffer.push(file);
         this.totalSize += file.size;
         this.loadedMap.set(file, 0);
@@ -67,15 +85,50 @@ export default class FileUploader {
         this.xhrArr.set(file, new UploadXHR(this, file));
     }
 
+    remove (file) {
+        let state = this.xhrArr.get(file).state;
+        if (
+            state === RUNNING ||
+            state === PENDING ||
+            state === FINISHED ||
+            state === ERROR 
+        ) {
+            return;
+        }
+        let idx = this.fileBuffer.findIndex(
+            f => f === file
+        );
+        if (idx < 0) {
+            return;
+        }
+
+        this.fileBuffer.splice(idx);
+        this.totalSize -=file.size;
+        this.loadedMap.delete(file);
+        this.callbackArr.delete(file);
+        this.callbackArr.delete(file);
+        this.xhrArr.delete(file);
+    }
+
     /**
      * flush the file buffer to upload every file in it
      */
-    flush() {
+    flush () {
 
-        var fileBuffer = this.fileBuffer;
+        let fileBuffer = this.fileBuffer;
 
-        for (var i = 0; i < fileBuffer.length; ++i) {
-            this.xhrArr.get(fileBuffer[i]).start();
+        for (let i = 0; i < fileBuffer.length; ++i) {
+            let xhr = this.xhrArr.get(fileBuffer[i]);
+            if (
+                xhr.state === RUNNING ||
+                xhr.state === PENDING ||
+                xhr.state === FINISHED ||
+                xhr.state === ERROR 
+            ) {
+                continue;
+            }
+
+            xhr.start();
         }
     }
 
@@ -84,7 +137,7 @@ export default class FileUploader {
      * @param {File} file 
      * @param {Function} callback 
      */
-    upload(file, callback) {
+    upload (file, callback) {
 
         this.fileBuffer.push(file);
         this.totalSize += file.size;

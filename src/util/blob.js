@@ -6,6 +6,7 @@ export function sendBlob(xhr, url, file, start, chuckSize) {
 
     form.append("number", start);
     form.append("file_name", file.name);
+    form.append("file_size", file.size);
     form.append("file", blob);
 
     xhr.open("POST", url, true);

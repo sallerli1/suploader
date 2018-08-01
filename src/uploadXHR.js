@@ -1,15 +1,15 @@
 import eventemiter from 'eventemitter3';
 import { sendBlob, blobSlice } from './util';
 import { sendFirst } from './fileInfo';
-
-const 
-    CREATED = 1,
-    READEY = 2,
-    PENDING = 0,
-    ERROR = -1,
-    STARTING = 3,
-    RUNNING = 4,
-    FINISHED = 5;
+import {
+    CREATED,
+    READEY,
+    PENDING,
+    ERROR,
+    STARTING,
+    RUNNING,
+    FINISHED
+} from './util/constants';
 
 export default class UploadXHR {
     constructor(uploader, file, lazy=true) {
@@ -20,10 +20,10 @@ export default class UploadXHR {
         if (window.XMLHttpRequest) {
             this.xhr = new XMLHttpRequest();
         } else {
-            this.xhr = new ActiveXObject("Microsoft.XMLHTTP");
+            this.xhr = new ActiveXObject('Microsoft.XMLHTTP');
         }
 
-        this.xhr.responseType = "json";
+        this.xhr.responseType = 'json';
 
         if (!lazy) {
             this.start();
@@ -82,12 +82,15 @@ function initUXHR(uxhr) {
         //check if the file has been fully uploaded
         //if fully uploaded, free the stored info about this file
         if (p * chuckSize >= file.size && failed.length === 0) {
-            uploader.callbackArr.get(file)();
-            uploader.options.onsuccess();
+            uxhr.state = FINISHED;
+            uploader.callbackArr.get(file)(file);
             uploader.xhrArr.delete(file);
             uploader.callbackArr.delete(file);
 
-            uploader.fileBuffer.filter(v => v !== file)
+            let idx = this.fileBuffer.findIndex(
+                f => f === file
+            );
+            uploader.fileBuffer.splice(idx);
             if (!uploader.fileBuffer.length) {
                 uploader.options.onsuccess();
             }
@@ -142,7 +145,7 @@ function initUXHR(uxhr) {
 
     xhr.onerror = event => {
         uxhr.state = ERROR;
-        uploader.options.onerror(event.error);
+        uploader.options.onerror(event.error, file);
     }
 
     //hook function called after intergrity checking

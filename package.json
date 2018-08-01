@@ -1,7 +1,7 @@
 {
-  "name": "fileupload",
+  "name": "supload",
   "version": "1.0.0",
-  "description": "file to upload files in a browser coded in javascript",
+  "description": "upload files in a browser coded in javascript",
   "main": "src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
