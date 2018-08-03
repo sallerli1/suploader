@@ -78,6 +78,10 @@ export default class FileUploader {
      * @param {Function} callback 
      */
     add (file, callback) {
+        callback = isType(Function, callback) ?
+            callback :
+            function () {};
+
         this.fileBuffer.push(file);
         this.totalSize += file.size;
         this.loadedMap.set(file, 0);
@@ -138,6 +142,9 @@ export default class FileUploader {
      * @param {Function} callback 
      */
     upload (file, callback) {
+        callback = isType(Function, callback) ?
+            callback :
+            function () {};
 
         this.fileBuffer.push(file);
         this.totalSize += file.size;

@@ -54,7 +54,9 @@ function initUXHR(uxhr) {
 
     let windowSize = (uploader.options.windowSize &&
         uploader.options.windowSize <= Math.floor((file.size / chuckSize) / 2)) ?
-        uploader.options.windowSize : Math.floor((file.size / chuckSize) / 2)
+        uploader.options.windowSize : Math.floor((file.size / chuckSize) / 2);
+
+    windowSize = windowSize || 1;
 
     let p = -1,
         left = -1,
