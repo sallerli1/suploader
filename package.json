@@ -1,5 +1,5 @@
 {
-  "name": "supload",
+  "name": "suploader",
   "version": "1.0.0",
   "description": "upload files in a browser coded in javascript",
   "main": "src/index.js",
