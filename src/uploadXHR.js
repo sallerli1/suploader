@@ -161,18 +161,6 @@ function initUXHR(uxhr) {
         uploader.options.onerror(event.error, file);
     }
 
-    //hook function called after intergrity checking
-    em.on('upload_start', () => {
-
-        //return if the present chuck hasn't
-        //reatched the right border of the sending window
-        if (uxhr.state === RUNNING) {
-            return;
-        }
-        uxhr.state = RUNNING;
-        upload();
-    })
-
     xhr.onprogress = (event) => {
         if (uxhr.state === RUNNING) {
             uploader.resolveProgress(file, event, p);
