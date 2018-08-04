@@ -63,8 +63,8 @@ function initUXHR(uxhr) {
 
     let failed = [];
 
-    let url = uploader.options.uploadRoute,
-        infoUrl = uploader.options.infoRoute;
+    let url = uploader.options.uploadRoute;
+    let filePath;
 
     let continueUpload = null;
     let upload = () => {
@@ -84,7 +84,7 @@ function initUXHR(uxhr) {
         //if fully uploaded, free the stored info about this file
         if (p * chuckSize >= file.size && failed.length === 0) {
             uxhr.state = FINISHED;
-            uploader.callbackArr.get(file)(file);
+            uploader.callbackArr.get(file)(file, filePath);
             uploader.xhrArr.delete(file);
 
             setTimeout(() => {
@@ -153,6 +153,9 @@ function initUXHR(uxhr) {
     };
 
     xhr.onload = async (event) => {
+        if (!filePath) {
+            filePath = xhr.response.path;
+        }
         checkIntegrity(xhr.response);
     }
 
