@@ -1,4 +1,3 @@
-import eventemiter from 'eventemitter3';
 import { sendBlob, blobSlice, isType } from './util';
 import { sendFirst } from './fileInfo';
 import {
