@@ -1,5 +1,5 @@
 import eventemiter from 'eventemitter3';
-import { sendBlob, blobSlice } from './util';
+import { sendBlob, blobSlice, isType } from './util';
 import { sendFirst } from './fileInfo';
 import {
     CREATED,
@@ -67,7 +67,7 @@ function initUXHR(uxhr) {
     let url = uploader.options.uploadRoute,
         infoUrl = uploader.options.infoRoute;
 
-    let em = new eventemiter();
+    let continueUpload = null;
     let upload = () => {
         if (uxhr.state !== RUNNING) {
             return;
@@ -87,9 +87,12 @@ function initUXHR(uxhr) {
             uxhr.state = FINISHED;
             uploader.callbackArr.get(file)(file);
             uploader.xhrArr.delete(file);
-            uploader.callbackArr.delete(file);
 
-            let idx = this.fileBuffer.findIndex(
+            setTimeout(() => {
+                uploader.callbackArr.delete(file);
+            }, 1000 * 10);
+            
+            let idx = uploader.fileBuffer.findIndex(
                 f => f === file
             );
             uploader.fileBuffer.splice(idx);
@@ -106,6 +109,11 @@ function initUXHR(uxhr) {
 
         uxhr.state = PENDING;
         p--;
+
+        continueUpload = () => {
+            uxhr.state = RUNNING;
+            upload();
+        }
     }
 
     //check whether a file has unsuccessfully sent chucks
@@ -117,10 +125,6 @@ function initUXHR(uxhr) {
         let pre = left;
         left = res.ack;
 
-        if (uxhr.state === STARTING) {
-            uxhr.state = RUNNING;
-        }
-
         (pre === left &&
         pre !== -1 &&
         failed.indexOf(pre) < 0) &&
@@ -131,13 +135,21 @@ function initUXHR(uxhr) {
         p = Math.max(left, p);
 
         //trigger upload
-        em.emit('upload_start');
+        if (isType(Function, continueUpload)) {
+            console.log(continueUpload)
+            continueUpload();
+        }
     }
 
     xhr.upload.onload = async (event) => {
         if (uxhr.state === RUNNING) {
             uploader.resolveProgress(file, event, p);
         }
+
+        if (p === -1) {
+            return;
+        }
+
         upload();
     };
 
@@ -170,5 +182,9 @@ function initUXHR(uxhr) {
 
     return () => {
         sendFirst(uxhr, chuckSize);
+        continueUpload = () => {
+            uxhr.state = RUNNING;
+            upload();
+        }
     }
 }

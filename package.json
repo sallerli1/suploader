@@ -33,7 +33,5 @@
     "webpack": "^4.11.1",
     "webpack-cli": "^3.0.3"
   },
-  "dependencies": {
-    "eventemitter3": "^3.1.0"
-  }
+  "dependencies": {}
 }

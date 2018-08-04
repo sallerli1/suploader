@@ -1,8 +1,8 @@
 
 // get type string of a construtor function
 export function getType(fn) {
-    if (fn === undefined) {
-        return undefined
+    if (fn === undefined || fn === null) {
+        return fn
     }
     const match = fn && fn.toString().match(/^\s*function (\w+)/)
     return match ? match[1] : ''
@@ -10,7 +10,15 @@ export function getType(fn) {
 
 // get type string of a variable
 export function getTypeOf(value) {
-    let fn = value === undefined ? undefined : Object.getPrototypeOf(value).constructor
+    let fn
+    if (value === undefined) {
+        fn = undefined
+    } else if (value === null) {
+        fn = null
+    } else {
+        fn = Object.getPrototypeOf(value).constructor
+    }
+
     return getType(fn)
 }
 
