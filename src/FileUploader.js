@@ -38,7 +38,7 @@ export default class FileUploader {
             onsuccess: isType(Function, options.onsuccess) ?
                 options.onsuccess :
                 function(){},
-            onprogress: isType(Function, options.onsuccess) ?
+            onprogress: isType(Function, options.onprogress) ?
                 options.onprogress :
                 function(){},
             onerror: isType(Function, options.onerror) ?

@@ -52,7 +52,6 @@ function initUXHR(uxhr) {
         left = -1,
         right = windowSize - 1;
 
-    let lostCnt = 0;
     let failed = [];
 
     let url = uploader.options.uploadRoute;
@@ -94,8 +93,8 @@ function initUXHR(uxhr) {
             uploader.options.onerror(event.error, file);
         }
     
-        xhr.onprogress = (event) => {
-            if (uxhr.state === RUNNING) {
+        xhr.upload.onprogress = (event) => {
+            if (uxhr.state === RUNNING && xhr.calcProgress) {
                 uploader.resolveProgress(file, event, p);
             }
         };
@@ -114,7 +113,7 @@ function initUXHR(uxhr) {
         }
 
         if (
-            p <= right ||
+            p < right &&
             (p + 1) * chuckSize < file.size
         ) {
             sendBlob(initXhr(), url, file, ++p, chuckSize);
@@ -124,11 +123,18 @@ function initUXHR(uxhr) {
         uxhr.state = PENDING;
         p--;
 
+        setContinueUpload();
+    }
+
+    let setContinueUpload = () => {
         continueUpload = () => {
+            if (uxhr.state === RUNNING) {
+                return;
+            }
             uxhr.state = RUNNING;
             upload();
         }
-    }
+    };
 
     //check whether a file has unsuccessfully sent chucks
     let checkIntegrity = async (res) => {
@@ -141,15 +147,7 @@ function initUXHR(uxhr) {
 
         if (
             pre === left &&
-            pre !== -1
-        ) {
-            lostCnt ++;
-        } else {
-            lostCnt = 0;
-        }
-
-        if (
-            lostCnt > 3 &&
+            pre !== -1 &&
             failed.indexOf(pre + 1) < 0
         ) {
             failed.push(pre+1);
@@ -192,9 +190,6 @@ function initUXHR(uxhr) {
 
     return () => {
         sendFirst(uxhr, initXhr());
-        continueUpload = () => {
-            uxhr.state = RUNNING;
-            upload();
-        }
+        setContinueUpload();
     }
 }
