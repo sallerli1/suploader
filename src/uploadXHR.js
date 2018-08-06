@@ -94,7 +94,7 @@ function initUXHR(uxhr) {
         }
     
         xhr.upload.onprogress = (event) => {
-            if (uxhr.state === RUNNING && xhr.calcProgress) {
+            if (uxhr.state === RUNNING) {
                 uploader.resolveProgress(file, event, p);
             }
         };
