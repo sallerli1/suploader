@@ -52,6 +52,7 @@ function initUXHR(uxhr) {
         left = -1,
         right = windowSize - 1;
 
+    let lostCnt = 0;
     let failed = [];
 
     let url = uploader.options.uploadRoute;
@@ -138,12 +139,22 @@ function initUXHR(uxhr) {
         let pre = left;
         left = res.ack;
 
-        (pre === left &&
-        pre !== -1 &&
-        pre !== chuckCount -1 &&
-        failed.indexOf(pre) < 0) &&
-        failed.push(pre+1);
+        if (
+            pre === left &&
+            pre !== -1
+        ) {
+            lostCnt ++;
+        } else {
+            lostCnt = 0;
+        }
 
+        if (
+            lostCnt > 3 &&
+            failed.indexOf(pre + 1) < 0
+        ) {
+            failed.push(pre+1);
+        }
+        
         right += (left - pre);
         right = right <= chuckCount -1 ? right : chuckCount -1;
         p = Math.max(left, p);
