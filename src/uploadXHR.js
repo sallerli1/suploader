@@ -16,14 +16,6 @@ export default class UploadXHR {
         this.file = file;
         this.state = CREATED;
 
-        if (window.XMLHttpRequest) {
-            this.xhr = new XMLHttpRequest();
-        } else {
-            this.xhr = new ActiveXObject('Microsoft.XMLHTTP');
-        }
-
-        this.xhr.responseType = 'json';
-
         if (!lazy) {
             this.start();
         }
@@ -47,7 +39,6 @@ export default class UploadXHR {
 function initUXHR(uxhr) {
     const uploader = uxhr.uploader;
     const file = uxhr.file;
-    const xhr = uxhr.xhr;
     const chuckSize = uploader.options.chuckSize;
     const chuckCount = Math.ceil(file.size / chuckSize);
 
@@ -67,6 +58,49 @@ function initUXHR(uxhr) {
     let filePath;
 
     let continueUpload = null;
+
+    let initXhr = () => {
+        let xhr;
+        if (window.XMLHttpRequest) {
+            xhr = new XMLHttpRequest();
+        } else {
+            xhr = new ActiveXObject('Microsoft.XMLHTTP');
+        }
+
+        xhr.responseType = 'json';
+
+        xhr.upload.onload = async (event) => {
+            if (uxhr.state === RUNNING) {
+                uploader.resolveProgress(file, event, p);
+            }
+    
+            if (p === -1) {
+                return;
+            }
+    
+            upload();
+        };
+    
+        xhr.onload = async (event) => {
+            if (!filePath) {
+                filePath = xhr.response.path;
+            }
+            checkIntegrity(xhr.response);
+        }
+    
+        xhr.onerror = event => {
+            uxhr.state = ERROR;
+            uploader.options.onerror(event.error, file);
+        }
+    
+        xhr.onprogress = (event) => {
+            if (uxhr.state === RUNNING) {
+                uploader.resolveProgress(file, event, p);
+            }
+        };
+
+        return xhr;
+    };
     let upload = () => {
         if (uxhr.state !== RUNNING) {
             return;
@@ -74,35 +108,13 @@ function initUXHR(uxhr) {
 
         //send the unsuccessfully sent chucks
         if (failed.length) {
-            sendBlob(xhr, url, file, failed.shift(), chuckSize);
+            sendBlob(initXhr(), url, file, failed.shift(), chuckSize);
             return;
         }
 
         p++;
-
-        //check if the file has been fully uploaded
-        //if fully uploaded, free the stored info about this file
-        if (p * chuckSize >= file.size && failed.length === 0) {
-            uxhr.state = FINISHED;
-            uploader.callbackArr.get(file)(file, filePath);
-            uploader.xhrArr.delete(file);
-
-            setTimeout(() => {
-                uploader.callbackArr.delete(file);
-            }, 1000 * 10);
-            
-            let idx = uploader.fileBuffer.findIndex(
-                f => f === file
-            );
-            uploader.fileBuffer.splice(idx);
-            if (!uploader.fileBuffer.length) {
-                uploader.options.onsuccess();
-            }
-
-            return;
-        }
         if (p <= right) {
-            sendBlob(xhr, url, file, p, chuckSize);
+            sendBlob(initXhr(), url, file, p, chuckSize);
             return;
         }
 
@@ -133,45 +145,36 @@ function initUXHR(uxhr) {
         right = right <= chuckCount -1 ? right : chuckCount -1;
         p = Math.max(left, p);
 
+        //check if the file has been fully uploaded
+        //if fully uploaded, free the stored info about this file
+        if (p * chuckSize >= file.size && failed.length === 0) {
+            uxhr.state = FINISHED;
+            uploader.callbackArr.get(file)(file, filePath);
+            uploader.xhrArr.delete(file);
+
+            setTimeout(() => {
+                uploader.callbackArr.delete(file);
+            }, 1000 * 10);
+            
+            let idx = uploader.fileBuffer.findIndex(
+                f => f === file
+            );
+            uploader.fileBuffer.splice(idx);
+            if (!uploader.fileBuffer.length) {
+                uploader.options.onsuccess();
+            }
+
+            return;
+        }
+
         //trigger upload
         if (isType(Function, continueUpload)) {
-            console.log(continueUpload)
             continueUpload();
         }
     }
 
-    xhr.upload.onload = async (event) => {
-        if (uxhr.state === RUNNING) {
-            uploader.resolveProgress(file, event, p);
-        }
-
-        if (p === -1) {
-            return;
-        }
-
-        upload();
-    };
-
-    xhr.onload = async (event) => {
-        if (!filePath) {
-            filePath = xhr.response.path;
-        }
-        checkIntegrity(xhr.response);
-    }
-
-    xhr.onerror = event => {
-        uxhr.state = ERROR;
-        uploader.options.onerror(event.error, file);
-    }
-
-    xhr.onprogress = (event) => {
-        if (uxhr.state === RUNNING) {
-            uploader.resolveProgress(file, event, p);
-        }
-    };
-
     return () => {
-        sendFirst(uxhr, chuckSize);
+        sendFirst(uxhr, initXhr());
         continueUpload = () => {
             uxhr.state = RUNNING;
             upload();

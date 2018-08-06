@@ -1,8 +1,7 @@
 import { isType } from "./util";
 
-export function sendFirst(uxhr) {
-    let xhr = uxhr.xhr,
-        file = uxhr.file,
+export function sendFirst(uxhr, xhr) {
+    let file = uxhr.file,
         url = uxhr.uploader.options.uploadRoute,
         chuckSize = uxhr.uploader.options.chuckSize;
 
