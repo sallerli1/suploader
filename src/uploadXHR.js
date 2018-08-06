@@ -112,9 +112,11 @@ function initUXHR(uxhr) {
             return;
         }
 
-        p++;
-        if (p <= right) {
-            sendBlob(initXhr(), url, file, p, chuckSize);
+        if (
+            p <= right ||
+            (p + 1) * chuckSize < file.size
+        ) {
+            sendBlob(initXhr(), url, file, ++p, chuckSize);
             return;
         }
 
@@ -138,6 +140,7 @@ function initUXHR(uxhr) {
 
         (pre === left &&
         pre !== -1 &&
+        pre !== chuckCount -1 &&
         failed.indexOf(pre) < 0) &&
         failed.push(pre+1);
 
@@ -147,7 +150,10 @@ function initUXHR(uxhr) {
 
         //check if the file has been fully uploaded
         //if fully uploaded, free the stored info about this file
-        if (p * chuckSize >= file.size && failed.length === 0) {
+        if (
+            (p + 1) * chuckSize >= file.size && 
+            failed.length === 0
+        ) {
             uxhr.state = FINISHED;
             uploader.callbackArr.get(file)(file, filePath);
             uploader.xhrArr.delete(file);
