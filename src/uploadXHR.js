@@ -1,4 +1,4 @@
-import { sendBlob, blobSlice, isType } from './util';
+import { sendBlob, blobSlice, isType, createRTOCalculater } from './util';
 import { sendFirst } from './fileInfo';
 import {
     CREATED,
@@ -52,6 +52,11 @@ function initUXHR(uxhr) {
         left = -1,
         right = windowSize - 1;
 
+    let RTT;
+    let RTO;
+    let sendTime;
+    let RTOCalculater = createRTOCalculater();
+
     let failed = [];
 
     let url = uploader.options.uploadRoute;
@@ -85,6 +90,20 @@ function initUXHR(uxhr) {
             if (!filePath) {
                 filePath = xhr.response.path;
             }
+
+            if (!RTT) {
+                RTT = Date.now() - sendTime;
+                xhr.timeout = RTT;
+            } else if (!RTO) {
+                RTT = Date.now() - sendTime;
+                RTO = RTOCalculater.getFirstRTO(RTT);
+                xhr.timeout = RTO;
+            } else {
+                RTT = Date.now() - sendTime;
+                RTO = RTOCalculater.getRTO(RTT);
+                xhr.timeout = RTO;
+            }
+            
             checkIntegrity(xhr.response);
         }
     
@@ -99,6 +118,7 @@ function initUXHR(uxhr) {
             }
         };
 
+        sendTime = Date.now();
         return xhr;
     };
     let upload = () => {
