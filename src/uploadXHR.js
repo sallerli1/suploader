@@ -64,14 +64,12 @@ function initUXHR(uxhr) {
 
     let continueUpload = null;
 
-    let initXhr = () => {
+    let initXhr = (idx) => {
         let xhr;
-        if (window.XMLHttpRequest) {
-            xhr = new XMLHttpRequest();
-        } else {
-            xhr = new ActiveXObject('Microsoft.XMLHTTP');
-        }
+        xhr = new XMLHttpRequest();
 
+        //let the xhr remember its chuck index
+        xhr.idx = idx;
         xhr.responseType = 'json';
         xhr.timeout = RTO ? RTO : RTT ? RTT : (60 * 1000);
 
@@ -124,6 +122,10 @@ function initUXHR(uxhr) {
             uploader.remove(file);
         }
     
+        xhr.ontimeout = () => {
+            failed.indexOf(xhr.idx) < 0 && failed.push(xhr.idx);
+        }
+
         xhr.upload.onprogress = (event) => {
             if (uxhr.state === RUNNING) {
                 uploader.resolveProgress(file, event, p);
@@ -140,7 +142,8 @@ function initUXHR(uxhr) {
 
         //send the unsuccessfully sent chucks
         if (failed.length) {
-            sendBlob(initXhr(), url, file, failed.shift(), chuckSize);
+            let idx = failed.shift();
+            sendBlob(initXhr(idx), url, file, idx, chuckSize);
             return;
         }
 
@@ -148,7 +151,8 @@ function initUXHR(uxhr) {
             p < right &&
             (p + 1) * chuckSize < file.size
         ) {
-            sendBlob(initXhr(), url, file, ++p, chuckSize);
+            ++p;
+            sendBlob(initXhr(p), url, file, p, chuckSize);
             return;
         }
 
