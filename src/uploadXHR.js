@@ -54,7 +54,6 @@ function initUXHR(uxhr) {
 
     let RTT;
     let RTO;
-    let sendTime;
     let RTOCalculater = createRTOCalculater();
 
     let failed = [];
@@ -71,7 +70,7 @@ function initUXHR(uxhr) {
         //let the xhr remember its chuck index
         xhr.idx = idx;
         xhr.responseType = 'json';
-        xhr.timeout = RTO ? RTO : RTT ? RTT : (60 * 1000);
+        xhr.timeout = RTO || (60 * 1000);
 
         xhr.upload.onload = async (event) => {
             if (uxhr.state === RUNNING) {
@@ -103,16 +102,15 @@ function initUXHR(uxhr) {
                 filePath = xhr.response.path;
             }
 
-            if (!RTT) {
-                RTT = Date.now() - sendTime;
-            } else if (!RTO) {
-                RTT = Date.now() - sendTime;
-                RTO = RTOCalculater.getFirstRTO(RTT);
-            } else {
-                RTT = Date.now() - sendTime;
-                RTO = RTOCalculater.getRTO(RTT);
+            if (xhr.idx >=0) {
+                if (!RTO) {
+                    RTT = Date.now() - sendTime;
+                    RTO = RTOCalculater.getFirstRTO(RTT);
+                } else {
+                    RTT = Date.now() - sendTime;
+                    RTO = RTOCalculater.getRTO(RTT);
+                }
             }
-
             checkIntegrity(xhr.response);
         }
     
@@ -157,8 +155,6 @@ function initUXHR(uxhr) {
         }
 
         uxhr.state = PENDING;
-        p--;
-
         setContinueUpload();
     }
 
@@ -196,7 +192,7 @@ function initUXHR(uxhr) {
         //check if the file has been fully uploaded
         //if fully uploaded, free the stored info about this file
         if (
-            (p + 1) * chuckSize >= file.size && 
+            (left + 1) * chuckSize >= file.size && 
             failed.length === 0
         ) {
             uxhr.state = FINISHED;
@@ -210,7 +206,7 @@ function initUXHR(uxhr) {
             let idx = uploader.fileBuffer.findIndex(
                 f => f === file
             );
-            uploader.fileBuffer.splice(idx);
+            uploader.fileBuffer.splice(idx, 1);
             if (!uploader.fileBuffer.length) {
                 uploader.options.onsuccess();
             }
@@ -225,7 +221,7 @@ function initUXHR(uxhr) {
     }
 
     return () => {
-        sendFirst(uxhr, initXhr());
+        sendFirst(uxhr, initXhr(-1));
         setContinueUpload();
     }
 }
