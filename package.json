@@ -1,6 +1,6 @@
 {
   "name": "suploader",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "upload files in a browser coded in javascript",
   "main": "src/index.js",
   "scripts": {
