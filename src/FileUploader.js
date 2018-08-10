@@ -125,8 +125,7 @@ export default class FileUploader {
             if (
                 xhr.state === RUNNING ||
                 xhr.state === PENDING ||
-                xhr.state === FINISHED ||
-                xhr.state === ERROR 
+                xhr.state === FINISHED
             ) {
                 continue;
             }

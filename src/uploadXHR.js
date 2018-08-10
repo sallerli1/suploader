@@ -117,6 +117,7 @@ function initUXHR(uxhr) {
         xhr.onerror = event => {
             uxhr.state = ERROR;
             uploader.options.onerror(event.error, file);
+            uploader.allProgress.delete(file);
             uploader.remove(file);
         }
     
@@ -198,6 +199,7 @@ function initUXHR(uxhr) {
             uxhr.state = FINISHED;
             uploader.callbackArr.get(file)(file, filePath);
             uploader.xhrArr.delete(file);
+            uploader.allProgress.delete(file);
 
             setTimeout(() => {
                 uploader.callbackArr.delete(file);
@@ -209,6 +211,8 @@ function initUXHR(uxhr) {
             uploader.fileBuffer.splice(idx, 1);
             if (!uploader.fileBuffer.length) {
                 uploader.options.onsuccess();
+                uploader.totalSize = 0;
+                uploader.loadedMap.delete(file);
             }
 
             return;
