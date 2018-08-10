@@ -73,6 +73,7 @@ function initUXHR(uxhr) {
         }
 
         xhr.responseType = 'json';
+        xhr.timeout = RTO ? RTO : RTT ? RTT : (60 * 1000);
 
         xhr.upload.onload = async (event) => {
             if (uxhr.state === RUNNING) {
@@ -87,29 +88,40 @@ function initUXHR(uxhr) {
         };
     
         xhr.onload = async (event) => {
+            if (
+                (xhr.status < 200 || xhr.status >= 300) &&
+                xhr.status !== 304
+            ){
+                uxhr.state = ERROR;
+                uploader.options.onerror({
+                    code: xhr.status,
+                    data: xhr.response
+                }, file);
+                uploader.remove(file);
+                return;
+            }
+
             if (!filePath) {
                 filePath = xhr.response.path;
             }
 
             if (!RTT) {
                 RTT = Date.now() - sendTime;
-                xhr.timeout = RTT;
             } else if (!RTO) {
                 RTT = Date.now() - sendTime;
                 RTO = RTOCalculater.getFirstRTO(RTT);
-                xhr.timeout = RTO;
             } else {
                 RTT = Date.now() - sendTime;
                 RTO = RTOCalculater.getRTO(RTT);
-                xhr.timeout = RTO;
             }
-            
+
             checkIntegrity(xhr.response);
         }
     
         xhr.onerror = event => {
             uxhr.state = ERROR;
             uploader.options.onerror(event.error, file);
+            uploader.remove(file);
         }
     
         xhr.upload.onprogress = (event) => {
