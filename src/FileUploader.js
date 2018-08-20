@@ -106,9 +106,8 @@ export default class FileUploader {
         }
 
         this.fileBuffer.splice(idx, 1);
-        this.totalSize -=file.size;
+        this.totalSize -= file.size;
         this.loadedMap.delete(file);
-        this.callbackArr.delete(file);
         this.callbackArr.delete(file);
         this.xhrArr.delete(file);
     }

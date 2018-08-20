@@ -200,6 +200,8 @@ function initUXHR(uxhr) {
             uploader.callbackArr.get(file)(file, filePath);
             uploader.xhrArr.delete(file);
             uploader.allProgress.delete(file);
+            uploader.loadedMap.delete(file);
+            uploader.totalSize -= file.size;
 
             setTimeout(() => {
                 uploader.callbackArr.delete(file);
@@ -212,7 +214,6 @@ function initUXHR(uxhr) {
             if (!uploader.fileBuffer.length) {
                 uploader.options.onsuccess();
                 uploader.totalSize = 0;
-                uploader.loadedMap.delete(file);
             }
 
             return;
