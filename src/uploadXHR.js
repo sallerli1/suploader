@@ -55,6 +55,7 @@ function initUXHR(uxhr) {
     let RTT;
     let RTO;
     let RTOCalculater = createRTOCalculater();
+    let sendTime;
 
     let failed = [];
 
