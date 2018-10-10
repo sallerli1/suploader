@@ -7,6 +7,7 @@ import {
     ERROR,
     STARTING,
     RUNNING,
+    TIMEOUT,
     FINISHED
 } from './util/constants';
 
@@ -57,6 +58,8 @@ function initUXHR(uxhr) {
     let RTOCalculater = createRTOCalculater();
     let sendTime;
 
+    let runningXhrCnt = 0;
+
     let failed = [];
 
     let url = uploader.options.uploadRoute;
@@ -86,6 +89,7 @@ function initUXHR(uxhr) {
         };
     
         xhr.onload = async (event) => {
+            runningXhrCnt --;
             if (
                 (xhr.status < 200 || xhr.status >= 300) &&
                 xhr.status !== 304
@@ -116,6 +120,7 @@ function initUXHR(uxhr) {
         }
     
         xhr.onerror = event => {
+            runningXhrCnt --;
             uxhr.state = ERROR;
             uploader.options.onerror(event.error, file);
             uploader.allProgress.delete(file);
@@ -123,7 +128,13 @@ function initUXHR(uxhr) {
         }
     
         xhr.ontimeout = () => {
+            runningXhrCnt --;
             failed.indexOf(xhr.idx) < 0 && failed.push(xhr.idx);
+
+            if (runningXhrCnt <= 0) {
+                uxhr.state = TIMEOUT;
+                upload();
+            }
         }
 
         xhr.upload.onprogress = (event) => {
@@ -144,6 +155,7 @@ function initUXHR(uxhr) {
         if (failed.length) {
             let idx = failed.shift();
             sendBlob(initXhr(idx), url, file, idx, chuckSize);
+            runningXhrCnt ++;
             return;
         }
 
@@ -153,6 +165,7 @@ function initUXHR(uxhr) {
         ) {
             ++p;
             sendBlob(initXhr(p), url, file, p, chuckSize);
+            runningXhrCnt ++;
             return;
         }
 

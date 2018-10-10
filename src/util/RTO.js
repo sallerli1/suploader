@@ -1,6 +1,6 @@
 export const ALPHA = 0.125;
 export const BETA = 0.25;
-export const DETA = 4;
+export const DETA = 6;
 
 
 export function createRTOCalculater () {
