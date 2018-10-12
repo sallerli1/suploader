@@ -7,7 +7,6 @@ import {
     ERROR,
     STARTING,
     RUNNING,
-    TIMEOUT,
     FINISHED
 } from './util/constants';
 
@@ -56,7 +55,6 @@ function initUXHR(uxhr) {
     let RTT;
     let RTO;
     let RTOCalculater = createRTOCalculater();
-    let sendTime;
 
     let runningXhrCnt = 0;
 
@@ -75,6 +73,7 @@ function initUXHR(uxhr) {
         xhr.idx = idx;
         xhr.responseType = 'json';
         xhr.timeout = RTO || (60 * 1000);
+        let sendTime;
 
         xhr.upload.onload = async (event) => {
             if (uxhr.state === RUNNING) {
@@ -132,7 +131,6 @@ function initUXHR(uxhr) {
             failed.indexOf(xhr.idx) < 0 && failed.push(xhr.idx);
 
             if (runningXhrCnt <= 0) {
-                uxhr.state = TIMEOUT;
                 upload();
             }
         }
